@@ -19,7 +19,7 @@ namespace StageTracker
         public const string Author = "Kyle";
         public const string Name = "StageTracker";
         public const string GUID = Author + "." + Name;
-        public const string Version = "1.0.1";
+        public const string Version = "1.0.2";
 
         internal static BepInEx.Logging.ManualLogSource Log;
 

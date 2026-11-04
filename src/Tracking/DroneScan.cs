@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using RoR2;
 using StageTracker.Util;
 using UnityEngine;
@@ -40,13 +39,58 @@ namespace StageTracker.Tracking
 
     public static class DroneScan
     {
+        // Broken (repairable) drones are plain interactable prefabs, not character bodies. Each
+        // DroneDef knows the spawn card of its broken variant, so the prefab name identifies the
+        // drone type — this also covers combiner-upgraded variants registered in the catalog.
+        private static readonly Dictionary<string, DroneDef> BrokenPrefabMap = new Dictionary<string, DroneDef>();
+        private static bool BrokenPrefabMapBuilt;
+
+        // Unmapped drone interactables already logged this session (keeps the log tidy).
+        private static readonly HashSet<string> _loggedFallbacks = new HashSet<string>();
+
+        private static void EnsureBrokenPrefabMap()
+        {
+            if (BrokenPrefabMapBuilt)
+            {
+                return;
+            }
+
+            BrokenPrefabMapBuilt = true;
+            foreach (var def in DroneCatalog.allDroneDefs)
+            {
+                if (!def)
+                {
+                    continue;
+                }
+
+                var card = def.droneBrokenSpawnCard;
+                var prefab = card ? card.prefab : null;
+                if (!prefab)
+                {
+                    continue;
+                }
+
+                string prefabName = StripClone(prefab.name);
+                if (!BrokenPrefabMap.ContainsKey(prefabName))
+                {
+                    BrokenPrefabMap[prefabName] = def;
+                }
+            }
+        }
+
+        private static string StripClone(string name)
+        {
+            return name != null && name.EndsWith("(Clone)") ? name.Substring(0, name.Length - 7) : name;
+        }
+
         public static DroneData Scan()
         {
+            EnsureBrokenPrefabMap();
+
             var data = new DroneData();
             var brokenMap = new SortedDictionary<int, (string label, string colorHex, int available, int total)>();
             var fallbackMap = new SortedDictionary<string, (int available, int total)>();
 
-            // Drone-flavored interactables.
             var purchases = InstanceTracker.GetInstancesList<PurchaseInteraction>();
             for (int i = 0; i < purchases.Count; i++)
             {
@@ -69,7 +113,7 @@ namespace StageTracker.Tracking
                     continue;
                 }
 
-                if (go.GetComponent<DroneVendorTerminalBehavior>() || go.GetComponent<DroneVendorMultiShopController>() || token == "DRONE_VENDOR_TERMINAL_NAME")
+                if (go.GetComponentInChildren<DroneVendorTerminalBehavior>(true) || go.GetComponentInChildren<DroneVendorMultiShopController>(true) || token == "DRONE_VENDOR_TERMINAL_NAME")
                 {
                     data.TripleShopTotal++;
                     if (purchase.available)
@@ -79,51 +123,23 @@ namespace StageTracker.Tracking
                     continue;
                 }
 
-                if (go.GetComponent<DroneScrapperController>() || token == "DRONE_SCRAPPER_NAME")
+                if (go.GetComponentInChildren<DroneScrapperController>(true) || token == "DRONE_SCRAPPER_NAME")
                 {
                     data.DroneScrapperPresent = true;
                     continue;
                 }
 
-                if (go.GetComponent<DroneCombinerController>())
+                if (go.GetComponentInChildren<DroneCombinerController>(true))
                 {
                     data.DroneCombinerPresent = true;
-                }
-            }
-
-            if (InstanceTracker.Any<DroneCombinerController>())
-            {
-                data.DroneCombinerPresent = true;
-            }
-
-            // Broken (repairable) drones live in the scene as dormant character bodies with a
-            // PurchaseInteraction on them; DroneCatalog maps the body to its type and tier — this
-            // also catches combiner-upgraded drones, which token matching could never do.
-            var bodies = CharacterBody.readOnlyInstancesList;
-            for (int i = 0; i < bodies.Count; i++)
-            {
-                var body = bodies[i];
-                if (!body)
-                {
                     continue;
                 }
 
-                var purchase = body.GetComponentInChildren<PurchaseInteraction>();
-                if (!purchase)
+                // Broken drone? Match the prefab against the catalog's broken spawn cards.
+                DroneDef def = BrokenPrefabMap.TryGetValue(StripClone(go.name), out var mapped) ? mapped : null;
+                if (def)
                 {
-                    continue; // deployed drones (owned by masters) have no purchase interaction
-                }
-
-                string token = purchase.displayNameToken;
-                if (token != null && token.StartsWith("TURRET1"))
-                {
-                    continue; // already counted above
-                }
-
-                DroneIndex droneIndex = DroneCatalog.GetDroneIndexFromBodyIndex(body.bodyIndex);
-                if (droneIndex != DroneIndex.None)
-                {
-                    brokenMap.TryGetValue((int)droneIndex, out var bucket);
+                    brokenMap.TryGetValue((int)def.droneIndex, out var bucket);
                     bucket.total++;
                     if (purchase.available)
                     {
@@ -132,40 +148,40 @@ namespace StageTracker.Tracking
 
                     if (bucket.label == null)
                     {
-                        var def = DroneCatalog.GetDroneDef(droneIndex);
-                        if (def)
-                        {
-                            bucket.label = Lang.TryGet(def.nameToken) ?? def.name;
-                            bucket.colorHex = def.colorOverride != ColorCatalog.ColorIndex.None
-                                ? Palette.Hex(def.colorOverride)
-                                : Palette.Hex(def.tier);
-                        }
+                        bucket.label = Lang.TryGet(def.nameToken) ?? def.name;
+                        bucket.colorHex = def.colorOverride != ColorCatalog.ColorIndex.None
+                            ? Palette.Hex(def.colorOverride)
+                            : Palette.Hex(def.tier);
                     }
 
-                    brokenMap[(int)droneIndex] = bucket;
+                    brokenMap[(int)def.droneIndex] = bucket;
                     continue;
                 }
 
-                // Not in the catalog: group by body display name so it still shows up. Only accept
-                // drone-like bodies, so unrelated purchase interactions can't leak into this panel.
-                string name = body.GetDisplayName();
-                if (string.IsNullOrEmpty(name))
+                // Drone-flavored interactable the catalog doesn't know: group by display name so it
+                // still shows up, and log it once so unmapped drones are easy to add later.
+                bool droneFlavored = purchase.isDrone || (token != null && token.Contains("DRONE"));
+                if (droneFlavored)
                 {
-                    name = body.gameObject.name;
-                }
+                    string displayName = purchase.GetDisplayName();
+                    if (string.IsNullOrEmpty(displayName))
+                    {
+                        displayName = go.name;
+                    }
 
-                if (!name.Contains("Drone") && !name.Contains("drone") && !name.Contains("Turret"))
-                {
-                    continue;
-                }
+                    if (_loggedFallbacks.Add(displayName))
+                    {
+                        Plugin.Log.LogInfo($"Unmapped drone interactable '{displayName}' (token='{token}', go='{go.name}') — shown gray in the drone panel.");
+                    }
 
-                fallbackMap.TryGetValue(name, out var fallback);
-                fallback.total++;
-                if (purchase.available)
-                {
-                    fallback.available++;
+                    fallbackMap.TryGetValue(displayName, out var fallback);
+                    fallback.total++;
+                    if (purchase.available)
+                    {
+                        fallback.available++;
+                    }
+                    fallbackMap[displayName] = fallback;
                 }
-                fallbackMap[name] = fallback;
             }
 
             foreach (var pair in brokenMap)

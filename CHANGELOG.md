@@ -17,3 +17,6 @@
 - Shipping request pods and Aurelionite geodes/fragments recognized by display name.
 - New chests appear as individual toggles in the options menu.
 - `stage_tracker_scan` now dumps each chest's drop table, item tag, and tier chances.
+
+## 1.0.2
+- Fixed: gunner/medic/missile/etc. drones were missing from the drone panel. Broken drones are matched against each DroneDef's broken-variant spawn card now, so every purchasable drone shows by type and tier — including combiner-upgraded ones. Anything the catalog doesn't cover still appears (gray, grouped by name) and is logged once.
