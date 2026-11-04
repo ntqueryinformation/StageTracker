@@ -7,4 +7,6 @@
 - Hold Tab / Always-visible display modes.
 - Per-category toggles in the in-game options menu (Risk of Options).
 - "Show Used Over Total" option: every counter reads like `Chest: 5/6` even when nothing is used yet (on by default).
-- Unknown interactables are still listed, grouped by name, so future content is never invisible.
+- Multishop terminals and the Newt Altar are detected reliably (their behaviour component lives on the prefab root, not the interactable child).
+- Gunner turrets are tracked only in the drone panel, where they belong.
+- Unknown interactables are still listed, grouped by name, so future content is never invisible — and each one is logged once so gaps are easy to close.
