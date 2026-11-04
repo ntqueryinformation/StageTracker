@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RoR2;
 using StageTracker.Util;
 
@@ -9,11 +10,18 @@ namespace StageTracker.Tracking
         // Chests & terminals
         Multishop,
         EquipmentMultishop,
-        Chest,
+        CrashedMultishop,
+        ChestSmall,
+        ChestLarge,
+        ChestLegendary,
+        ChestDamage,
+        ChestHealing,
+        ChestUtility,
         CloakedChest,
         AdaptiveChest,
         SecurityChest,
         ScavengerPack,
+        ShippingRequests,
         EquipmentBarrel,
         RustyLockbox,
         EncrustedCache,
@@ -96,11 +104,18 @@ namespace StageTracker.Tracking
         {
             new CategoryDef { Id = Cat.Multishop, Key = "MultishopTerminals", Label = "Multishop Terminal", Token = "MULTISHOP_TERMINAL_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Utility },
             new CategoryDef { Id = Cat.EquipmentMultishop, Key = "EquipmentMultishops", Label = "Equipment Multishop", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Equipment },
-            new CategoryDef { Id = Cat.Chest, Key = "Chests", Label = "Chest", Section = "Chests & Terminals", Hex = Palette.ChestGold },
+            new CategoryDef { Id = Cat.CrashedMultishop, Key = "CrashedMultishops", Label = "Crashed Multishop", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Money },
+            new CategoryDef { Id = Cat.ChestSmall, Key = "ChestSmall", Label = "Chest", Section = "Chests & Terminals", Hex = Palette.ChestGold },
+            new CategoryDef { Id = Cat.ChestLarge, Key = "ChestLarge", Label = "Large Chest", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Tier2Item },
+            new CategoryDef { Id = Cat.ChestLegendary, Key = "ChestLegendary", Label = "Legendary Chest", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.BossItem },
+            new CategoryDef { Id = Cat.ChestDamage, Key = "ChestDamage", Label = "Damage Chest", Section = "Chests & Terminals", Hex = Palette.ChestGold },
+            new CategoryDef { Id = Cat.ChestHealing, Key = "ChestHealing", Label = "Healing Chest", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Healing },
+            new CategoryDef { Id = Cat.ChestUtility, Key = "ChestUtility", Label = "Utility Chest", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Utility },
             new CategoryDef { Id = Cat.CloakedChest, Key = "CloakedChests", Label = "Cloaked Chest", Token = "CHEST1_STEALTHED_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Interactable },
             new CategoryDef { Id = Cat.AdaptiveChest, Key = "AdaptiveChests", Label = "Adaptive Chest", Token = "CASINOCHEST_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.VoidItem },
             new CategoryDef { Id = Cat.SecurityChest, Key = "SecurityChests", Label = "Timed Security Chest", Section = "Chests & Terminals", Hex = Palette.ChestGold },
             new CategoryDef { Id = Cat.ScavengerPack, Key = "ScavengerPacks", Label = "Scavenger Backpack", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.BossItem },
+            new CategoryDef { Id = Cat.ShippingRequests, Key = "ShippingRequests", Label = "Shipping Request", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Interactable },
             new CategoryDef { Id = Cat.EquipmentBarrel, Key = "EquipmentBarrels", Label = "Equipment Barrel", Token = "EQUIPMENTBARREL_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.Equipment },
             new CategoryDef { Id = Cat.RustyLockbox, Key = "RustyLockboxes", Label = "Rusty Lockbox", Token = "LOCKBOX_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.BossItem },
             new CategoryDef { Id = Cat.EncrustedCache, Key = "EncrustedCaches", Label = "Encrusted Cache", Token = "VOIDLOCKBOX_NAME", Section = "Chests & Terminals", ColorIdx = ColorCatalog.ColorIndex.VoidItem },
@@ -163,5 +178,16 @@ namespace StageTracker.Tracking
             }
             return null;
         }
+
+        /// <summary>
+        /// Fallback matching by resolved English display name, for interactables whose tokens are
+        /// unknown and that have no dedicated component (verified against the English client).
+        /// </summary>
+        public static readonly Dictionary<string, Cat> DisplayNameMap = new Dictionary<string, Cat>
+        {
+            ["Shipping Request Form"] = Cat.ShippingRequests,
+            ["Aurelionite Fragment"] = Cat.Geodes,
+            ["Aurelionite Geode"] = Cat.Geodes,
+        };
     }
 }

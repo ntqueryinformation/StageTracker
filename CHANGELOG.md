@@ -10,3 +10,10 @@
 - Multishop terminals and the Newt Altar are detected reliably (their behaviour component lives on the prefab root, not the interactable child).
 - Gunner turrets are tracked only in the drone panel, where they belong.
 - Unknown interactables are still listed, grouped by name, so future content is never invisible — and each one is logged once so gaps are easy to close.
+
+## 1.0.1
+- Chests are now split by kind: small chest, large chest, legendary chest, and damage/healing/utility category chests — detected from each chest's actual drop data, not name guessing.
+- Crashed multishop terminals (the free "capsules") are their own category, separate from paid multishop terminals.
+- Shipping request pods and Aurelionite geodes/fragments recognized by display name.
+- New chests appear as individual toggles in the options menu.
+- `stage_tracker_scan` now dumps each chest's drop table, item tag, and tier chances.

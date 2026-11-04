@@ -255,7 +255,7 @@ namespace StageTracker.Tracking
                     return Cat.EquipmentMultishop;
                 }
 
-                return Cat.Multishop; // includes crashed/free terminals (cost 0)
+                return Cat.Multishop;
             }
 
             if (go.name.Contains("SecurityChest") || go.name.Contains("TimedChest"))
@@ -268,9 +268,42 @@ namespace StageTracker.Tracking
                 return Cat.ScavengerPack;
             }
 
-            if (go.GetComponentInChildren<ChestBehavior>(true))
+            // Chests are split by their ChestBehavior data: guaranteed tier chances separate
+            // small/large/legendary, and requiredItemTag identifies the category (damage/healing/
+            // utility) chests. The crashed multishop "capsules" use the dedicated free-chest table.
+            var chest = go.GetComponentInChildren<ChestBehavior>(true);
+            if (chest)
             {
-                return Cat.Chest; // regular, large, legendary, category and large category chests
+                if (chest.dropTable is FreeChestDropTable)
+                {
+                    return Cat.CrashedMultishop;
+                }
+
+                switch (chest.requiredItemTag)
+                {
+                    case ItemTag.Damage: return Cat.ChestDamage;
+                    case ItemTag.Healing: return Cat.ChestHealing;
+                    case ItemTag.Utility: return Cat.ChestUtility;
+                }
+
+                if (chest.tier3Chance >= 0.99f)
+                {
+                    return Cat.ChestLegendary;
+                }
+
+                if (chest.tier2Chance >= 0.99f)
+                {
+                    return Cat.ChestLarge;
+                }
+
+                return Cat.ChestSmall;
+            }
+
+            // Last resort: match by the resolved English display name.
+            var displayName = purchase.GetDisplayName();
+            if (!string.IsNullOrEmpty(displayName) && Categories.DisplayNameMap.TryGetValue(displayName, out var byName))
+            {
+                return byName;
             }
 
             return null;

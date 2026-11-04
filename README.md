@@ -11,8 +11,8 @@ Client-side Risk of Rain 2 mod that adds **Loot** and **Drones** panels to the H
 ## Features
 
 ### Loot panel
-- Multishop terminals (including crashed/free and equipment variants)
-- Chests: regular, large, legendary, category, large category, adaptive, cloaked, timed security
+- Multishop terminals (paid, equipment variants, and the crashed/free "capsule" terminals tracked separately)
+- Chests, split by kind: small, large, legendary, damage, healing, utility, adaptive, cloaked, timed security
 - Scavenger backpacks
 - Equipment barrels
 - Rusty lockboxes and encrusted caches

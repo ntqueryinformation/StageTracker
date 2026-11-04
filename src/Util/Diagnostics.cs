@@ -51,6 +51,12 @@ namespace StageTracker.Util
                 }
 
                 sb.AppendLine($"  [{purchase.gameObject.name}] token='{purchase.displayNameToken}' name='{purchase.GetDisplayName()}' cost={purchase.cost}({purchase.costType}) available={purchase.available} isShrine={purchase.isShrine} isDrone={purchase.isDrone} goldShrine={purchase.isGoldShrine} components=[{names}]");
+
+                var chest = purchase.GetComponentInChildren<ChestBehavior>(true);
+                if (chest)
+                {
+                    sb.AppendLine($"      chest: dropTable={(chest.dropTable ? chest.dropTable.GetType().Name + "/" + chest.dropTable.name : "null")} tag={chest.requiredItemTag} tiers={chest.tier1Chance:P0}/{chest.tier2Chance:P0}/{chest.tier3Chance:P0} lunar={chest.lunarChance:P0} drops={chest.minDropCount}-{chest.maxDropCount}");
+                }
             }
 
             var bodies = CharacterBody.readOnlyInstancesList;
