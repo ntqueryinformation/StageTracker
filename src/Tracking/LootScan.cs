@@ -57,6 +57,18 @@ namespace StageTracker.Tracking
         private static readonly FieldInfo BossPurchaseField =
             typeof(ShrineBossBehavior).GetField("purchaseCount", BindingFlags.NonPublic | BindingFlags.Instance);
 
+        /// <summary>Drone-panel territory: flagged drones plus gunner turrets (which are not flagged isDrone).</summary>
+        private static bool BelongsToDronePanel(PurchaseInteraction purchase)
+        {
+            if (purchase.isDrone)
+            {
+                return true;
+            }
+
+            string token = purchase.displayNameToken;
+            return token != null && (token.StartsWith("TURRET1") || token == "DRONE_SCRAPPER_NAME");
+        }
+
         public static LootData Scan()
         {
             var data = new LootData();
@@ -68,9 +80,9 @@ namespace StageTracker.Tracking
             for (int i = 0; i < purchases.Count; i++)
             {
                 var purchase = purchases[i];
-                if (!purchase || purchase.isDrone)
+                if (!purchase || BelongsToDronePanel(purchase))
                 {
-                    continue; // drones are the drone panel's job
+                    continue; // drones (and turrets) are the drone panel's job
                 }
 
                 var category = Classify(purchase);
@@ -80,6 +92,11 @@ namespace StageTracker.Tracking
                     if (string.IsNullOrEmpty(displayName))
                     {
                         displayName = purchase.gameObject.name;
+                    }
+
+                    if (_loggedUnknowns.Add(displayName))
+                    {
+                        Plugin.Log.LogInfo($"Uncategorized interactable '{displayName}' (token='{purchase.displayNameToken}', cost={purchase.costType}, go='{purchase.gameObject.name}') — it will show gray under Other until it gets its own category.");
                     }
 
                     unknownMap.TryGetValue(displayName, out var bucket);
@@ -171,6 +188,9 @@ namespace StageTracker.Tracking
             return data;
         }
 
+        // Interactables logged as uncategorized at least once this session (keeps the log tidy).
+        private static readonly HashSet<string> _loggedUnknowns = new HashSet<string>();
+
         private static Cat? Classify(PurchaseInteraction purchase)
         {
             // Token-based classification first — cheap and stable across updates.
@@ -203,29 +223,32 @@ namespace StageTracker.Tracking
             }
 
             // Component-based classification — catches newer content regardless of its token string.
+            // GetComponentInChildren: some prefabs keep the behaviour on the root while the
+            // PurchaseInteraction sits on a child (multishop terminals and the Newt Altar both do).
             var go = purchase.gameObject;
-            if (go.GetComponent<ShrineCompulsionBehaviour>()) return Cat.ShrineCompulsion;
-            if (go.GetComponent<HallowingShrineSplitBase>()) return Cat.ShrineHallowed;
-            if (go.GetComponent<ShrineRebirthController>()) return Cat.ShrineRebirth;
-            if (go.GetComponent<HalcyoniteShrineInteractable>()) return Cat.ShrineHalcyon;
-            if (go.GetComponent<ShrineCombatTroopBehavior>()) return Cat.ShrineCombatCollective;
-            if (go.GetComponent<ShrineCombatBehavior>()) return Cat.ShrineCombat;
-            if (go.GetComponent<ShrineDeathBehavior>()) return Cat.ShrineCombat;
-            if (go.GetComponent<ShrineHealingBehavior>()) return Cat.ShrineWoods;
-            if (go.GetComponent<ShrineRestackBehavior>()) return Cat.ShrineOrder;
-            if (go.GetComponent<ShrineBloodBehavior>()) return Cat.ShrineBlood;
-            if (go.GetComponent<ShrineChanceBehavior>()) return Cat.ShrineChance;
-            if (go.GetComponent<ShrineBossBehavior>()) return Cat.ShrineMountain;
-            if (go.GetComponent<ShrineCleanseBehavior>()) return Cat.CleansingPool;
-            if (go.GetComponent<SolusVendorShrineController>()) return Cat.TempItemDistributors;
-            if (go.GetComponent<ScrapperController>()) return Cat.Scrapper;
-            if (go.GetComponent<BarrelInteraction>()) return Cat.EquipmentBarrel;
-            if (go.GetComponent<DroneVendorTerminalBehavior>()) return null; // drone panel
-            if (go.GetComponent<DroneVendorMultiShopController>()) return null; // drone panel
-            if (go.GetComponent<DroneCombinerController>()) return null; // drone panel
-            if (go.GetComponent<DroneScrapperController>()) return null; // drone panel
+            if (go.GetComponentInChildren<ShrineCompulsionBehaviour>(true)) return Cat.ShrineCompulsion;
+            if (go.GetComponentInChildren<HallowingShrineSplitBase>(true)) return Cat.ShrineHallowed;
+            if (go.GetComponentInChildren<ShrineRebirthController>(true)) return Cat.ShrineRebirth;
+            if (go.GetComponentInChildren<HalcyoniteShrineInteractable>(true)) return Cat.ShrineHalcyon;
+            if (go.GetComponentInChildren<ShrineCombatTroopBehavior>(true)) return Cat.ShrineCombatCollective;
+            if (go.GetComponentInChildren<ShrineCombatBehavior>(true)) return Cat.ShrineCombat;
+            if (go.GetComponentInChildren<ShrineDeathBehavior>(true)) return Cat.ShrineCombat;
+            if (go.GetComponentInChildren<ShrineHealingBehavior>(true)) return Cat.ShrineWoods;
+            if (go.GetComponentInChildren<ShrineRestackBehavior>(true)) return Cat.ShrineOrder;
+            if (go.GetComponentInChildren<ShrineBloodBehavior>(true)) return Cat.ShrineBlood;
+            if (go.GetComponentInChildren<ShrineChanceBehavior>(true)) return Cat.ShrineChance;
+            if (go.GetComponentInChildren<ShrineBossBehavior>(true)) return Cat.ShrineMountain;
+            if (go.GetComponentInChildren<ShrineCleanseBehavior>(true)) return Cat.CleansingPool;
+            if (go.GetComponentInChildren<SolusVendorShrineController>(true)) return Cat.TempItemDistributors;
+            if (go.GetComponentInChildren<ScrapperController>(true)) return Cat.Scrapper;
+            if (go.GetComponentInChildren<BarrelInteraction>(true)) return Cat.EquipmentBarrel;
+            if (go.GetComponentInChildren<PortalStatueBehavior>(true)) return Cat.NewtAltar; // the Newt Altar is the blue portal statue
+            if (go.GetComponentInChildren<DroneVendorTerminalBehavior>(true)) return null; // drone panel
+            if (go.GetComponentInChildren<DroneVendorMultiShopController>(true)) return null; // drone panel
+            if (go.GetComponentInChildren<DroneCombinerController>(true)) return null; // drone panel
+            if (go.GetComponentInChildren<DroneScrapperController>(true)) return null; // drone panel
 
-            if (go.GetComponent<MultiShopController>())
+            if (go.GetComponentInChildren<MultiShopController>(true))
             {
                 if (go.name.Contains("Equipment"))
                 {
@@ -245,7 +268,7 @@ namespace StageTracker.Tracking
                 return Cat.ScavengerPack;
             }
 
-            if (go.GetComponent<ChestBehavior>())
+            if (go.GetComponentInChildren<ChestBehavior>(true))
             {
                 return Cat.Chest; // regular, large, legendary, category and large category chests
             }
