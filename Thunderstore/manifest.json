@@ -1,7 +1,7 @@
 {
   "name": "StageTracker",
   "version_number": "1.0.0",
-  "website_url": "",
+  "website_url": "https://github.com/ntqueryinformation/StageTracker",
   "description": "Loot & drone panels that track everything left on the stage — all current DLC content, shown at once with no teleporter gating, in-game colors, and per-category toggles in the game's options menu. Client-side.",
   "dependencies": [
     "bbepis-BepInExPack-5.4.2122",
