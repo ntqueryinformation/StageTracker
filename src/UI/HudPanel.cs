@@ -46,13 +46,27 @@ namespace StageTracker.UI
             var header = Object.Instantiate(templateLabel.gameObject, container).GetComponent<HGTextMeshProUGUI>();
             var body = Object.Instantiate(templateLabel.gameObject, container).GetComponent<HGTextMeshProUGUI>();
 
-            // Remove the original objective entries (including the template label) afterwards, keeping
-            // only the two fresh copies.
-            foreach (Transform child in container)
+            // Remove the original objective entries (including the template label), keeping only the
+            // two fresh copies. Destroying while iterating a Transform skips children, so keep
+            // sweeping until nothing but ours is left — leftovers here are the blank space bug.
+            bool removedExtra = true;
+            while (removedExtra)
             {
-                if (child != header.transform && child != body.transform)
+                removedExtra = false;
+                Transform toRemove = null;
+                foreach (Transform child in container)
                 {
-                    Object.DestroyImmediate(child.gameObject);
+                    if (child != header.transform && child != body.transform)
+                    {
+                        toRemove = child;
+                        removedExtra = true;
+                        break;
+                    }
+                }
+
+                if (toRemove)
+                {
+                    Object.DestroyImmediate(toRemove.gameObject);
                 }
             }
 
@@ -79,7 +93,21 @@ namespace StageTracker.UI
             header.text = headerText;
             body.text = string.Empty;
 
+            LogHierarchy(clone.transform, 0);
+
             return new HudPanel { Root = clone, Label = header, Body = body };
+        }
+
+        private static void LogHierarchy(Transform node, int depth)
+        {
+            var rect = node as RectTransform;
+            string size = rect != null ? $" size={rect.rect.width:F0}x{rect.rect.height:F0}" : string.Empty;
+            Plugin.Log.LogInfo($"{new string(' ', depth * 2)}{node.name}{size}");
+
+            foreach (Transform child in node)
+            {
+                LogHierarchy(child, depth + 1);
+            }
         }
     }
 }

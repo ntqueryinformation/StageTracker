@@ -23,7 +23,7 @@ namespace StageTracker
 
         internal static BepInEx.Logging.ManualLogSource Log;
 
-        internal static ModConfig Config { get; private set; }
+        internal static new ModConfig Config { get; private set; }
 
         private void Awake()
         {

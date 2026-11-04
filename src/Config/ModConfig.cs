@@ -29,6 +29,7 @@ namespace StageTracker.Config
         public readonly ConfigEntry<bool> ShowInvitations;
         public readonly ConfigEntry<bool> ShowStageName;
         public readonly ConfigEntry<bool> TrackUncategorized;
+        public readonly ConfigEntry<bool> ShowUsedOverTotal;
 
         public readonly IReadOnlyDictionary<Cat, ConfigEntry<bool>> LootToggles;
         public readonly IReadOnlyDictionary<DroneCat, ConfigEntry<bool>> DroneToggles;
@@ -53,6 +54,11 @@ namespace StageTracker.Config
 
             ShowLootPanel = file.Bind("Display", "ShowLootPanel", true, "Show the loot panel.");
             ShowDronePanel = file.Bind("Display", "ShowDronePanel", true, "Show the drone panel.");
+            ShowUsedOverTotal = file.Bind(
+                "Display",
+                "ShowUsedOverTotal",
+                true,
+                "Always show counts as used/total (e.g. 'Chest: 5/6') instead of only the remaining amount (e.g. 'Chest: 6') when nothing has been used yet.");
 
             ShowEnemies = file.Bind("Footer", "ShowEnemyCounts", true, "Show remaining enemy counts by team.");
             ShowInvitations = file.Bind("Footer", "ShowInvitations", true, "Show how many Shrine of the Mountain invitations are still pending. Accurate on the host; approximate for clients.");
@@ -117,6 +123,7 @@ namespace StageTracker.Config
             ModSettingsManager.AddOption(new ChoiceOption(PanelMode), modGuid, modName);
             ModSettingsManager.AddOption(new CheckBoxOption(ShowLootPanel), modGuid, modName);
             ModSettingsManager.AddOption(new CheckBoxOption(ShowDronePanel), modGuid, modName);
+            ModSettingsManager.AddOption(new CheckBoxOption(ShowUsedOverTotal), modGuid, modName);
             ModSettingsManager.AddOption(new CheckBoxOption(ShowEnemies), modGuid, modName);
             ModSettingsManager.AddOption(new CheckBoxOption(ShowInvitations), modGuid, modName);
             ModSettingsManager.AddOption(new CheckBoxOption(ShowStageName), modGuid, modName);

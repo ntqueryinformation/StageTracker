@@ -36,7 +36,7 @@ namespace StageTracker.UI
                             }
 
                             sb.Append('\n');
-                            sb.Append(FormatLine(unknown.label, Palette.Gray, unknown.available, unknown.total)).Append('\n');
+                            sb.Append(FormatLine(unknown.label, Palette.Gray, unknown.available, unknown.total, config.ShowUsedOverTotal.Value)).Append('\n');
                         }
                     }
                     continue;
@@ -57,7 +57,7 @@ namespace StageTracker.UI
                 }
 
                 string label = Lang.TryGet(def.Token) ?? def.Label;
-                sb.Append(FormatLine(label, def.ColorIdx != null ? Palette.Hex(def.ColorIdx.Value) : def.Hex, count.available, count.total)).Append('\n');
+                sb.Append(FormatLine(label, def.ColorIdx != null ? Palette.Hex(def.ColorIdx.Value) : def.Hex, count.available, count.total, config.ShowUsedOverTotal.Value)).Append('\n');
 
                 if (def.Id == Cat.ShrineChance && data.ChancePurchasesLeft > 0)
                 {
@@ -67,8 +67,8 @@ namespace StageTracker.UI
             }
 
             // Machines with per-tier buckets.
-            AppendTierLine(sb, data.PrinterAvailable, data.PrinterTotal, Lang.TryGet("DUPLICATOR_NAME") ?? "3D Printer", config.Enabled(Cat.Printers));
-            AppendTierLine(sb, data.CauldronAvailable, data.CauldronTotal, "Cauldron", config.Enabled(Cat.Cauldrons));
+            AppendTierLine(sb, data.PrinterAvailable, data.PrinterTotal, Lang.TryGet("DUPLICATOR_NAME") ?? "3D Printer", config.Enabled(Cat.Printers), config.ShowUsedOverTotal.Value);
+            AppendTierLine(sb, data.CauldronAvailable, data.CauldronTotal, "Cauldron", config.Enabled(Cat.Cauldrons), config.ShowUsedOverTotal.Value);
 
             if (config.ShowEnemies.Value && (data.MonsterEnemies > 0 || data.VoidEnemies > 0))
             {
@@ -115,7 +115,7 @@ namespace StageTracker.UI
 
             if (config.Enabled(DroneCat.GunnerTurret) && data.TurretTotal > 0)
             {
-                sb.Append(FormatLine("Gunner Turret", Palette.Hex(ColorCatalog.ColorIndex.Tier1Item), data.TurretAvailable, data.TurretTotal)).Append('\n');
+                sb.Append(FormatLine("Gunner Turret", Palette.Hex(ColorCatalog.ColorIndex.Tier1Item), data.TurretAvailable, data.TurretTotal, config.ShowUsedOverTotal.Value)).Append('\n');
             }
 
             if (config.Enabled(DroneCat.BrokenDrones))
@@ -128,14 +128,14 @@ namespace StageTracker.UI
                         continue;
                     }
 
-                    sb.Append(FormatLine(group.Label, group.ColorHex, group.Available, group.Total)).Append('\n');
+                    sb.Append(FormatLine(group.Label, group.ColorHex, group.Available, group.Total, config.ShowUsedOverTotal.Value)).Append('\n');
                 }
             }
 
             if (config.Enabled(DroneCat.TripleShop) && data.TripleShopTotal > 0)
             {
                 sb.Append('\n');
-                sb.Append(FormatLine("Triple Drone Shop", Palette.Hex(ColorCatalog.ColorIndex.Utility), data.TripleShopAvailable, data.TripleShopTotal)).Append('\n');
+                sb.Append(FormatLine("Triple Drone Shop", Palette.Hex(ColorCatalog.ColorIndex.Utility), data.TripleShopAvailable, data.TripleShopTotal, config.ShowUsedOverTotal.Value)).Append('\n');
             }
 
             if (config.Enabled(DroneCat.DroneScrapper) || config.Enabled(DroneCat.DroneCombiner))
@@ -154,7 +154,7 @@ namespace StageTracker.UI
             return sb.ToString();
         }
 
-        private static void AppendTierLine(StringBuilder sb, int[] available, int[] total, string label, bool enabled)
+        private static void AppendTierLine(StringBuilder sb, int[] available, int[] total, string label, bool enabled, bool alwaysUsedOverTotal)
         {
             if (!enabled)
             {
@@ -194,7 +194,7 @@ namespace StageTracker.UI
                 first = false;
 
                 string hex = Palette.BucketHex(i);
-                sb.Append(available[i] == total[i]
+                sb.Append(available[i] == total[i] && !alwaysUsedOverTotal
                     ? Palette.Colored(total[i].ToString(), hex)
                     : Palette.Colored($"{available[i]}/{total[i]}", hex));
             }
@@ -213,14 +213,14 @@ namespace StageTracker.UI
                 .Append('\n');
         }
 
-        private static string FormatLine(string label, string colorHex, int available, int total)
+        private static string FormatLine(string label, string colorHex, int available, int total, bool alwaysUsedOverTotal)
         {
             var sb = new StringBuilder(64);
             sb.Append(Stack + "> " + Close)
                 .Append(Palette.Colored(label, colorHex))
                 .Append(Stack + ": " + Close);
 
-            if (available == total)
+            if (available == total && !alwaysUsedOverTotal)
             {
                 sb.Append(total);
             }

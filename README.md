@@ -34,6 +34,7 @@ Client-side Risk of Rain 2 mod that adds **Loot** and **Drones** panels to the H
 ### Display modes
 - **Hold Tab** (default): panels appear while the scoreboard is held
 - **Always visible**: panels stay docked on the right side of the screen, under the objective panel
+- **Show Used Over Total**: display every counter as `used/total` (e.g. `Chest: 5/6`) even before you buy anything — with the option off, untouched counters show just the remaining amount (`Chest: 6`)
 
 ### Settings
 Every tracked category can be toggled individually in the **in-game options menu under `Mods → Stage Tracker`** (via [Risk of Options](https://thunderstore.io/package/Rune580/Risk_Of_Options/)). All settings also live in the standard BepInEx config file (`BepInEx/config/kyle.stagetracker.cfg`).
