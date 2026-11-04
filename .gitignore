@@ -3,3 +3,4 @@ obj/
 Release/
 .cache/
 *.user
+*.zip
